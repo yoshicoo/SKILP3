@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import SkillRadar from "@/components/SkillRadar";
 import StarRating from "@/components/StarRating";
+import ProgressBar from "@/components/ProgressBar";
 
 type CV = {
   name: string;
@@ -15,12 +16,14 @@ type CV = {
   domains: string[];
   certifications: string[];
   management?: { teamSize?: string; period?: string; description?: string; };
+  careerSupport?: string[];
 };
 
 export default function CVPage() {
   const [cv, setCv] = useState<CV | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const run = async () => {
@@ -48,7 +51,25 @@ export default function CVPage() {
     run();
   }, []);
 
-  if (loading) return <div className="text-center text-slate-600">CVを生成しています...</div>;
+  useEffect(() => {
+    if (!loading) {
+      setProgress(100);
+      return;
+    }
+    setProgress(0);
+    const timer = setInterval(() => {
+      setProgress((p) => (p < 90 ? p + Math.random() * 10 : p));
+    }, 500);
+    return () => clearInterval(timer);
+  }, [loading]);
+
+  if (loading)
+    return (
+      <div className="grid gap-4 place-items-center">
+        <div className="text-center text-slate-600">CVを生成しています...</div>
+        <ProgressBar value={progress} />
+      </div>
+    );
   if (error) return <div className="text-center text-red-600">{error}</div>;
   if (!cv) return <div className="text-center">データがありません</div>;
 
@@ -124,6 +145,17 @@ export default function CVPage() {
           ))}
         </div>
       </section>
+
+      {cv.careerSupport && (
+        <section className="card p-6">
+          <h2 className="text-lg font-semibold mb-3">キャリアサポート</h2>
+          <ul className="list-disc list-inside text-sm text-slate-700 space-y-1">
+            {cv.careerSupport.map((tip) => (
+              <li key={tip}>{tip}</li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }
