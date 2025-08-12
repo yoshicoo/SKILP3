@@ -4,6 +4,7 @@ import { REQUIRED_FIELDS, FieldKey } from "@/lib/fields";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
+const OPENAI_TIMEOUT_MS = 8_000;
 
 type QA = { field: string; question: string; answer: string };
 
@@ -70,15 +71,18 @@ ${JSON.stringify(history || [], null, 2)}
 - management: チーム規模/期間/体制/役割
 - other: 補足事項/強み/興味関心`;
 
-    const res = await openai.chat.completions.create({
-      model: OPENAI_MODEL,
-      temperature: 0.4,
-      messages: [
-        { role: "system", content: sys },
-        { role: "user", content: user },
-      ],
-      response_format: { type: "json_object" },
-    });
+    const res = await openai.chat.completions.create(
+      {
+        model: OPENAI_MODEL,
+        temperature: 0.4,
+        messages: [
+          { role: "system", content: sys },
+          { role: "user", content: user },
+        ],
+        response_format: { type: "json_object" },
+      },
+      { timeout: OPENAI_TIMEOUT_MS }
+    );
 
     const content = res.choices[0]?.message?.content || "{}";
     parsed = JSON.parse(content);
