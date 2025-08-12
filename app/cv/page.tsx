@@ -5,6 +5,7 @@ import Link from "next/link";
 import SkillRadar from "@/components/SkillRadar";
 import StarRating from "@/components/StarRating";
 import ProgressBar from "@/components/ProgressBar";
+import SalaryChart from "@/components/SalaryChart";
 
 type CV = {
   name: string;
@@ -16,7 +17,19 @@ type CV = {
   domains: string[];
   certifications: string[];
   management?: { teamSize?: string; period?: string; description?: string; };
-  careerSupport?: string[];
+  careerSupport?: {
+    targetRoles: string[];
+    salaryTrend: { stage: string; value: number }[];
+    skillGap: { current: string; target: string; reason: string };
+    roadmap: {
+      "0-3m": { actions: string[]; metrics: string[] };
+      "3-6m": { actions: string[]; metrics: string[] };
+      "6-12m": { actions: string[]; metrics: string[] };
+    };
+    certifications: { name: string; reason: string; timing: string }[];
+    learningPlan: { topic: string; module: string; task: string }[];
+    mentoringTips: string[];
+  };
 };
 
 export default function CVPage() {
@@ -148,12 +161,88 @@ export default function CVPage() {
 
       {cv.careerSupport && (
         <section className="card p-6">
-          <h2 className="text-lg font-semibold mb-3">キャリアサポート</h2>
-          <ul className="list-disc list-inside text-sm text-slate-700 space-y-1">
-            {cv.careerSupport.map((tip) => (
-              <li key={tip}>{tip}</li>
-            ))}
-          </ul>
+          <h2 className="text-lg font-semibold mb-6">キャリアサポート</h2>
+          <div className="grid gap-6">
+            <div>
+              <h3 className="text-base font-semibold">目指せるロール</h3>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {cv.careerSupport.targetRoles.map((r) => (
+                  <span key={r} className="badge">
+                    {r}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-base font-semibold">年収の推移</h3>
+              <div className="mt-2">
+                <SalaryChart data={cv.careerSupport.salaryTrend} />
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-base font-semibold">スキルギャップ</h3>
+              <p className="text-sm text-slate-700 mt-1">現状: {cv.careerSupport.skillGap.current}</p>
+              <p className="text-sm text-slate-700">目標: {cv.careerSupport.skillGap.target}</p>
+              <p className="text-xs text-slate-500 mt-1">理由: {cv.careerSupport.skillGap.reason}</p>
+            </div>
+
+            <div>
+              <h3 className="text-base font-semibold">ロードマップ</h3>
+              <div className="mt-2 grid md:grid-cols-3 gap-4 text-sm">
+                {Object.entries(cv.careerSupport.roadmap).map(([period, plan]) => (
+                  <div key={period} className="rounded-xl border p-4">
+                    <div className="font-medium">{period.replace('-', '–')}</div>
+                    <ul className="list-disc list-inside mt-2 space-y-1">
+                      {plan.actions.map((a) => (
+                        <li key={a}>{a}</li>
+                      ))}
+                    </ul>
+                    {plan.metrics.length > 0 && (
+                      <div className="text-xs text-slate-500 mt-2">
+                        メトリクス: {plan.metrics.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-base font-semibold">推奨資格</h3>
+              <ul className="mt-2 space-y-2 text-sm text-slate-700">
+                {cv.careerSupport.certifications.map((c) => (
+                  <li key={c.name} className="rounded-xl border p-4">
+                    <div className="font-medium">{c.name}</div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      理由: {c.reason} / 時期: {c.timing}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-base font-semibold">学習計画</h3>
+              <ul className="mt-2 list-disc list-inside text-sm text-slate-700 space-y-1">
+                {cv.careerSupport.learningPlan.map((l, idx) => (
+                  <li key={idx}>
+                    トピック: {l.topic} / モジュール: {l.module} / 実践課題: {l.task}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-base font-semibold">メンタリング活用Tips</h3>
+              <ul className="mt-2 list-disc list-inside text-sm text-slate-700 space-y-1">
+                {cv.careerSupport.mentoringTips.map((m) => (
+                  <li key={m}>{m}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </section>
       )}
     </div>
