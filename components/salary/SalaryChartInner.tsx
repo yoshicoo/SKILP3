@@ -9,7 +9,7 @@ export default function SalaryChartInner({ data }: { data: { stage: string; valu
         <XAxis dataKey="stage" />
         <YAxis />
         <Tooltip />
-        <Line type="monotone" dataKey="value" stroke="#8884d8" />
+        <Line type="monotone" dataKey="value" stroke="#5dc1cf" />
       </LineChart>
     </ResponsiveContainer>
   );
