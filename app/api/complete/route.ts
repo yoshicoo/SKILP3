@@ -22,7 +22,8 @@ export async function POST(req: Request) {
     "projects": [{"title": string, "industry": string, "scale": string, "role": string, "period": string, "summary": string}],
     "domains": string[],
     "certifications": string[],
-    "management": {"teamSize": string, "period": string, "description": string}
+    "management": {"teamSize": string, "period": string, "description": string},
+    "careerSupport": string[]
   }
 }`;
 
@@ -37,6 +38,7 @@ ${JSON.stringify(history || [], null, 2)}
 - 「recommendedAssignments」には、SHIFT内でのアサイン先の例（領域/業界/ポジション）を3〜6件挙げる。
 - 「skills」は5〜10個にまとめ、レベルは1〜5。
 - 名前が不明な場合は空に。
+- 「careerSupport」には、スキルアップのための具体的な手段を3〜5件挙げる。
 - 日本語で、ビジネス文書のトーン。`;
 
   const res = await openai.chat.completions.create({
