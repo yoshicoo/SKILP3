@@ -18,6 +18,7 @@ export default function InterviewPage() {
   const [answer, setAnswer] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<{ field: string; question: string; answer: string }[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const progress = currentQ?.progress ?? 0;
 
@@ -28,6 +29,7 @@ export default function InterviewPage() {
 
   const fetchNextQuestion = async (hist: { field: string; question: string; answer: string }[]) => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/ask", {
         method: "POST",
@@ -37,6 +39,10 @@ export default function InterviewPage() {
           sourceText: sessionStorage.getItem("skilp:sourceText") || ""
         }),
       });
+      if (res.status === 204) {
+        window.location.href = "/cv";
+        return;
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data?.message || "質問生成に失敗しました");
@@ -44,8 +50,9 @@ export default function InterviewPage() {
       const data: Question = await res.json();
       setCurrentQ(data);
       setAnswer("");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err?.message || "質問の取得に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -54,6 +61,7 @@ export default function InterviewPage() {
   const submitAnswer = async (ans: string) => {
     if (!currentQ) return;
     setLoading(true);
+    setError(null);
     try {
       const newHist = [
         ...history,
@@ -77,8 +85,9 @@ export default function InterviewPage() {
       }
       const data: Question = await res.json();
       setCurrentQ(data);
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setError(err?.message || "質問の取得に失敗しました");
     } finally {
       setLoading(false);
     }
@@ -140,7 +149,20 @@ export default function InterviewPage() {
           </div>
         </form>
       ) : (
-        <div className="py-12 text-center text-slate-600">{loading ? "生成中..." : "読み込み中..."}</div>
+        <div className="py-12 text-center text-slate-600">
+          {loading ? (
+            "生成中..."
+          ) : error ? (
+            <div className="space-y-3">
+              <div>{error}</div>
+              <button className="btn" type="button" onClick={() => fetchNextQuestion(history)}>
+                再試行
+              </button>
+            </div>
+          ) : (
+            "読み込み中..."
+          )}
+        </div>
       )}
     </div>
   );
