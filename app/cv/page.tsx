@@ -4,23 +4,41 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import SkillRadar from "@/components/SkillRadar";
 import StarRating from "@/components/StarRating";
+import ProgressBar from "@/components/ProgressBar";
+
+type RoadmapItem = { action: string; metric: string };
+type CareerSupport = {
+  targetRoles: string[];
+  salaryProgression: { stage: string; amount: string }[];
+  skillGap: { current: string; goal: string; reason: string };
+  roadmap: {
+    "0-3m": RoadmapItem[];
+    "3-6m": RoadmapItem[];
+    "6-12m": RoadmapItem[];
+  };
+  recommendedCertifications: { name: string; reason: string; timing: string }[];
+  learningPlan: { topic: string; modules: string[]; tasks: string[] }[];
+  mentoringTips: string[];
+};
 
 type CV = {
   name: string;
   headline: string;
   strengths: string[];
   recommendedAssignments: string[];
-  skills: { name: string; level: number; }[]; // 1-5
-  projects: { title: string; industry: string; scale: string; role: string; period?: string; summary?: string; }[];
+  skills: { name: string; level: number }[]; // 1-5
+  projects: { title: string; industry: string; scale: string; role: string; period?: string; summary?: string }[];
   domains: string[];
   certifications: string[];
-  management?: { teamSize?: string; period?: string; description?: string; };
+  management?: { teamSize?: string; period?: string; description?: string };
+  careerSupport?: CareerSupport;
 };
 
 export default function CVPage() {
   const [cv, setCv] = useState<CV | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const run = async () => {
@@ -48,7 +66,25 @@ export default function CVPage() {
     run();
   }, []);
 
-  if (loading) return <div className="text-center text-slate-600">CVを生成しています...</div>;
+  useEffect(() => {
+    if (!loading) {
+      setProgress(100);
+      return;
+    }
+    setProgress(0);
+    const timer = setInterval(() => {
+      setProgress((p) => (p < 90 ? p + Math.random() * 10 : p));
+    }, 500);
+    return () => clearInterval(timer);
+  }, [loading]);
+
+  if (loading)
+    return (
+      <div className="grid gap-4 place-items-center">
+        <div className="text-center text-slate-600">CVを生成しています...</div>
+        <ProgressBar value={progress} />
+      </div>
+    );
   if (error) return <div className="text-center text-red-600">{error}</div>;
   if (!cv) return <div className="text-center">データがありません</div>;
 
@@ -124,6 +160,78 @@ export default function CVPage() {
           ))}
         </div>
       </section>
+
+      {cv.careerSupport && (
+        <section className="card p-6">
+          <h2 className="text-lg font-semibold mb-3">キャリアサポート</h2>
+          <div className="grid gap-4 text-sm text-slate-700">
+            <div>
+              <h3 className="text-base font-semibold">目指せるロール</h3>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                {cv.careerSupport.targetRoles.map((r) => (
+                  <li key={r}>{r}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-base font-semibold mt-4">年収の推移</h3>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                {cv.careerSupport.salaryProgression.map((s, idx) => (
+                  <li key={idx}>{s.stage}: {s.amount}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-base font-semibold mt-4">スキルギャップ</h3>
+              <p className="mt-1">現状: {cv.careerSupport.skillGap.current}</p>
+              <p>目標: {cv.careerSupport.skillGap.goal}</p>
+              <p className="text-xs text-slate-500 mt-1">{cv.careerSupport.skillGap.reason}</p>
+            </div>
+            <div>
+              <h3 className="text-base font-semibold mt-4">ロードマップ</h3>
+              <div className="grid md:grid-cols-3 gap-4 mt-2">
+                {(["0-3m", "3-6m", "6-12m"] as const).map((period) => (
+                  <div key={period}>
+                    <div className="font-medium">{period}</div>
+                    <ul className="list-disc list-inside text-xs mt-1 space-y-1">
+                      {cv.careerSupport!.roadmap[period].map((item, idx) => (
+                        <li key={idx}>{item.action}（{item.metric}）</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-base font-semibold mt-4">推奨資格</h3>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                {cv.careerSupport.recommendedCertifications.map((c, idx) => (
+                  <li key={idx}>{c.name} - {c.reason}（{c.timing}）</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-base font-semibold mt-4">学習計画</h3>
+              <div className="grid gap-3 mt-1">
+                {cv.careerSupport.learningPlan.map((lp, idx) => (
+                  <div key={idx} className="rounded-lg border p-3">
+                    <div className="font-medium">{lp.topic}</div>
+                    <div className="text-xs mt-1">モジュール: {lp.modules.join("、")}</div>
+                    <div className="text-xs mt-1">実践課題: {lp.tasks.join("、")}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-base font-semibold mt-4">メンタリング活用Tips</h3>
+              <ul className="list-disc list-inside mt-1 space-y-1">
+                {cv.careerSupport.mentoringTips.map((t, idx) => (
+                  <li key={idx}>{t}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   );
-}
