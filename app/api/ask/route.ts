@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getOpenAI, OPENAI_MODEL } from "@/lib/openai";
-import { REQUIRED_FIELDS } from "@/lib/fields";
+import { REQUIRED_FIELDS, FieldKey } from "@/lib/fields";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -21,6 +21,16 @@ function pickNextField(history: QA[]): string | null {
   return null;
 }
 
+const FALLBACK_QUESTIONS: Record<FieldKey, { question: string; type: "text" }> = {
+  projects: { question: "直近で携わったプロジェクトの内容を教えてください。", type: "text" },
+  technologies: { question: "得意なプログラミング言語やツールを教えてください。", type: "text" },
+  duties: { question: "主な担当業務を教えてください。", type: "text" },
+  domains: { question: "経験した業界や分野を教えてください。", type: "text" },
+  certifications: { question: "保有している資格やスコアがあれば教えてください。", type: "text" },
+  management: { question: "マネジメント経験について教えてください。", type: "text" },
+  other: { question: "その他アピールしたい点があれば教えてください。", type: "text" },
+};
+
 export async function POST(req: Request) {
   const { history, sourceText } = await req.json();
   const nextField = pickNextField(history || []);
@@ -29,16 +39,19 @@ export async function POST(req: Request) {
     return new NextResponse(null, { status: 204 });
   }
 
-  const openai = getOpenAI();
-  const sys = `あなたは日本語で、候補者のスキル・経験を正確に引き出すインタビュアーです。
-出力は必ずJSON（単一オブジェクト）で: { "question": string, "type": "text"|"choice", "options": string[] }
+  let parsed: any = {};
+  try {
+    const openai = getOpenAI();
+    const sys = `あなたは日本語で、候補者のスキル・経験を正確に引き出すインタビュアーです。
+出力は必ずJSON（単一オブジェクト）で、余計な説明やコードブロックを含めないでください。
+{ "question": string, "type": "text"|"choice", "options": string[] }
 制約:
 - 一問一答。簡潔だが具体的に。
 - フィールド: ${nextField}
 - 過度に長い文章は避ける。
 - choiceの場合は3〜6個の選択肢を返す。`;
 
-  const user = `候補者の事前情報:
+    const user = `候補者の事前情報:
 <RESUME>${(sourceText || "").slice(0, 6000)}</RESUME>
 
 これまでのQ/A履歴（最新が末尾）:
@@ -54,22 +67,21 @@ ${JSON.stringify(history || [], null, 2)}
 - management: チーム規模/期間/体制/役割
 - other: 補足事項/強み/興味関心`;
 
-  const res = await openai.chat.completions.create({
-    model: OPENAI_MODEL,
-    temperature: 0.4,
-    messages: [
-      { role: "system", content: sys },
-      { role: "user", content: user },
-    ],
-    response_format: { type: "json_object" },
-  });
+    const res = await openai.chat.completions.create({
+      model: OPENAI_MODEL,
+      temperature: 0.4,
+      messages: [
+        { role: "system", content: sys },
+        { role: "user", content: user },
+      ],
+      response_format: { type: "json_object" },
+    });
 
-  const content = res.choices[0]?.message?.content || "{}";
-  let parsed: any = {};
-  try {
+    const content = res.choices[0]?.message?.content || "{}";
     parsed = JSON.parse(content);
-  } catch {
-    parsed = { question: "詳細を教えてください。", type: "text" };
+  } catch (e) {
+    console.error("OpenAI error", e);
+    parsed = FALLBACK_QUESTIONS[nextField] || { question: "詳細を教えてください。", type: "text" };
   }
   const progress = computeProgress(history || []);
   return NextResponse.json({
