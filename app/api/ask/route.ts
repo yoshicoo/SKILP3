@@ -13,7 +13,10 @@ function computeProgress(history: QA[]) {
   return Math.round(ratio * 100);
 }
 
-function pickNextField(history: QA[]): string | null {
+// Pick the next field that has not yet been covered in the interview history.
+// Returning `FieldKey | null` allows TypeScript to correctly narrow the type
+// and index into `FALLBACK_QUESTIONS` without requiring additional casts.
+function pickNextField(history: QA[]): FieldKey | null {
   const covered = new Set(history.map(h => h.field));
   for (const f of REQUIRED_FIELDS) {
     if (!covered.has(f)) return f;
