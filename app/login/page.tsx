@@ -34,23 +34,20 @@ export default function LoginPage() {
     <div className="max-w-md mx-auto">
       <div className="card p-6">
         <h1 className="text-2xl font-semibold mb-2">ログイン</h1>
-        <p className="text-sm text-slate-600 mb-6">認証情報を入力してください（テスト用固定値）</p>
+        <p className="text-sm text-slate-600 mb-6">認証情報を入力してください</p>
         <form onSubmit={onSubmit} className="space-y-4">
           <div>
             <label className="label">ID（メールアドレス）</label>
-            <input className="input mt-1" type="email" placeholder="test@shiftinc.jp" value={id} onChange={(e) => setId(e.target.value)} required />
+            <input className="input mt-1" type="email" placeholder="email" value={id} onChange={(e) => setId(e.target.value)} required />
           </div>
           <div>
             <label className="label">パスワード</label>
-            <input className="input mt-1" type="password" placeholder="p@ssword" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            <input className="input mt-1" type="password" placeholder="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
           {error && <div className="text-sm text-red-600">{error}</div>}
           <button className="btn w-full" disabled={loading}>
             {loading ? "認証中..." : "ログイン"}
           </button>
-          <div className="text-xs text-slate-500">
-            テスト用: ID <span className="badge">test@shiftinc.jp</span> / PW <span className="badge">p@ssword</span>
-          </div>
         </form>
       </div>
     </div>
