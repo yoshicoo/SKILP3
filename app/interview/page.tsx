@@ -53,25 +53,35 @@ export default function InterviewPage() {
 
   const submitAnswer = async (ans: string) => {
     if (!currentQ) return;
-    const newHist = [...history, { field: currentQ.field, question: currentQ.question, answer: ans }];
-    setHistory(newHist);
-    sessionStorage.setItem("skilp:history", JSON.stringify(newHist));
-    setAnswer("");
-    setCurrentQ(null);
-    const res = await fetch("/api/ask", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        history: newHist,
-        sourceText: sessionStorage.getItem("skilp:sourceText") || "",
-      }),
-    });
-    if (res.status === 204) {
-      window.location.href = "/cv";
-      return;
+    setLoading(true);
+    try {
+      const newHist = [
+        ...history,
+        { field: currentQ.field, question: currentQ.question, answer: ans },
+      ];
+      setHistory(newHist);
+      sessionStorage.setItem("skilp:history", JSON.stringify(newHist));
+      setAnswer("");
+      setCurrentQ(null);
+      const res = await fetch("/api/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          history: newHist,
+          sourceText: sessionStorage.getItem("skilp:sourceText") || "",
+        }),
+      });
+      if (res.status === 204) {
+        window.location.href = "/cv";
+        return;
+      }
+      const data: Question = await res.json();
+      setCurrentQ(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-    const data: Question = await res.json();
-    setCurrentQ(data);
   };
 
   const onSubmit = async (e: React.FormEvent) => {
