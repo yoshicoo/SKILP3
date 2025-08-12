@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import ProgressBar from "@/components/ProgressBar";
 
 type QType = "text" | "choice";
@@ -51,14 +51,11 @@ export default function InterviewPage() {
     }
   };
 
-  const onSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitAnswer = async (ans: string) => {
     if (!currentQ) return;
-    const newHist = [...history, { field: currentQ.field, question: currentQ.question, answer }];
+    const newHist = [...history, { field: currentQ.field, question: currentQ.question, answer: ans }];
     setHistory(newHist);
-    // 保存
     sessionStorage.setItem("skilp:history", JSON.stringify(newHist));
-    // 次の質問
     setAnswer("");
     setCurrentQ(null);
     const res = await fetch("/api/ask", {
@@ -66,16 +63,20 @@ export default function InterviewPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         history: newHist,
-        sourceText: sessionStorage.getItem("skilp:sourceText") || ""
+        sourceText: sessionStorage.getItem("skilp:sourceText") || "",
       }),
     });
     if (res.status === 204) {
-      // 完了 -> /cv へ
       window.location.href = "/cv";
       return;
     }
     const data: Question = await res.json();
     setCurrentQ(data);
+  };
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitAnswer(answer);
   };
 
   return (
@@ -91,16 +92,15 @@ export default function InterviewPage() {
           {currentQ.type === "choice" ? (
             <div className="grid grid-cols-1 gap-2">
               {currentQ.options?.map((opt) => (
-                <label key={opt} className="flex items-center gap-2">
-                  <input
-                    type="radio"
-                    className="h-4 w-4"
-                    name="opt"
-                    onChange={() => setAnswer(opt)}
-                    checked={answer === opt}
-                  />
-                  <span className="text-sm">{opt}</span>
-                </label>
+                <button
+                  key={opt}
+                  type="button"
+                  className="btn w-full text-left"
+                  onClick={() => submitAnswer(opt)}
+                  disabled={loading}
+                >
+                  {opt}
+                </button>
               ))}
             </div>
           ) : (
@@ -113,9 +113,11 @@ export default function InterviewPage() {
             />
           )}
           <div className="flex gap-3">
-            <button className="btn" type="submit" disabled={loading || !answer}>
-              回答して次へ
-            </button>
+            {currentQ.type === "text" && (
+              <button className="btn" type="submit" disabled={loading || !answer}>
+                回答して次へ
+              </button>
+            )}
             <button
               className="btn-secondary"
               type="button"
