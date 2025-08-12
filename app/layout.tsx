@@ -16,7 +16,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
               S
             </div>
             <div className="text-lg font-semibold">SKILP</div>
-            <div className="ml-auto text-sm text-slate-500">スキル可視化・最適アサイン</div>
+            <div className="ml-auto text-sm text-slate-500">スキル可視化・最適アサイン（アプデ中）</div>
           </div>
         </header>
         <main className="container-narrow py-8">{children}</main>
